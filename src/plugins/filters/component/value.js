@@ -8,6 +8,7 @@ import BaseComponent from './_base';
 import MultipleSelectUI from '../ui/multipleSelect';
 import { CONDITION_BY_VALUE, CONDITION_NONE } from '../constants';
 import { getConditionDescriptor } from '../conditionRegisterer';
+import moment from 'moment';
 
 /**
  * @class ValueComponent
@@ -184,12 +185,8 @@ class ValueComponent extends BaseComponent {
 
     const col = this.hot.getPlugin('filters').getSelectedColumn();
     if (this.hot.getSettings().columns[col.visualIndex].type == 'date') {
-        // Date sort is currently only for dd/mm/yyyy
-        items.sort(function(a, b){
-            var aa = a.visualValue.split('/').reverse().join(),
-                bb = b.visualValue.split('/').reverse().join();
-            return aa < bb ? -1 : (aa > bb ? 1 : 0);
-        });
+        const dateFormat = this.hot.getSettings().columns[col.visualIndex].dateFormat;
+        items.sort((a,b) => moment(a['visualValue'], dateFormat) - moment(b['visualValue'], dateFormat));
     } else {
         items.sort(function(a, b) {
             return (a['visualValue'] === b['visualValue'] ? 0 : (a['visualValue'] < b['visualValue'] ? -1 : 1));
