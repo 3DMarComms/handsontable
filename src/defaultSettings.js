@@ -2477,6 +2477,7 @@ DefaultSettings.prototype = {
    * ```
    */
   filters: void 0,
+  escapeFilters: void 0,
 
   /**
    * The {@link Formulas} plugin allows Handsontable to process formula expressions defined in the provided data.

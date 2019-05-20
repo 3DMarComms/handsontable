@@ -174,6 +174,28 @@ class ValueComponent extends BaseComponent {
     const values = unifyColumnValues(this._getColumnVisibleValues());
     const items = intersectValues(values, values, defaultBlankCellValue);
 
+    if (this.hot.getSettings().escapeFilters) {
+        let div = this.hot.rootDocument.createElement('div');
+        arrayEach(items, (item) => {
+          div.innerHTML = item['visualValue'];
+          item['visualValue'] = div.innerText;
+        });
+    }
+
+    const col = this.hot.getPlugin('filters').getSelectedColumn();
+    if (this.hot.getSettings().columns[col.visualIndex].type == 'date') {
+        // Date sort is currently only for dd/mm/yyyy
+        items.sort(function(a, b){
+            var aa = a.visualValue.split('/').reverse().join(),
+                bb = b.visualValue.split('/').reverse().join();
+            return aa < bb ? -1 : (aa > bb ? 1 : 0);
+        });
+    } else {
+        items.sort(function(a, b) {
+            return (a['visualValue'] === b['visualValue'] ? 0 : (a['visualValue'] < b['visualValue'] ? -1 : 1));
+        });
+    }
+
     this.getMultipleSelectElement().setItems(items);
     super.reset();
     this.getMultipleSelectElement().setValue(values);
