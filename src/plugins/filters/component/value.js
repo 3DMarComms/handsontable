@@ -184,7 +184,10 @@ class ValueComponent extends BaseComponent {
     }
 
     const col = this.hot.getPlugin('filters').getSelectedColumn();
-    if (this.hot.getSettings().columns[col.visualIndex].type == 'date') {
+
+    if (this.hot.getSettings().columns[col.visualIndex].columnSorting && this.hot.getSettings().columns[col.visualIndex].columnSorting.compareFunctionFactory) {
+        items.sort(this.hot.getSettings().columns[col.visualIndex].columnSorting.compareFunctionFactory('asc', null));
+    } else if (this.hot.getSettings().columns[col.visualIndex].type == 'date') {
         const dateFormat = this.hot.getSettings().columns[col.visualIndex].dateFormat;
         items.sort((a,b) => moment(a['visualValue'], dateFormat) - moment(b['visualValue'], dateFormat));
     } else {
