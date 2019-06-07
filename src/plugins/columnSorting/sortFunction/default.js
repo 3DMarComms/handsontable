@@ -15,6 +15,14 @@ export function compareFunctionFactory(sortOrder, columnMeta, columnPluginSettin
   return function(value, nextValue) {
     const { sortEmptyCells } = columnPluginSettings;
 
+    if (columnPluginSettings.stripHTML) {
+        let div = document.createElement('div');
+        div.innerHTML = value;
+        value = div.innerText;
+        div.innerHTML = nextValue;
+        nextValue = div.innerText;
+    }
+
     if (typeof value === 'string') {
       value = value.toLowerCase();
     }

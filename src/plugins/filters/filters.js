@@ -404,10 +404,18 @@ class Filters extends BasePlugin {
   getDataMapAtColumn(column) {
     const visualIndex = this.t.toVisualColumn(column);
     const data = [];
+    let escapeDiv;
+
+    if (this.hot.getSettings().escapeFilters) {
+        escapeDiv = this.hot.rootDocument.createElement('div');
+    }
 
     arrayEach(this.hot.getSourceDataAtCol(visualIndex), (value, rowIndex) => {
-      const { row, col, visualCol, visualRow, type, instance, dateFormat } = this.hot.getCellMeta(rowIndex, visualIndex);
-
+      let { row, col, visualCol, visualRow, type, instance, dateFormat } = this.hot.getCellMeta(rowIndex, visualIndex);
+      if (escapeDiv) {
+        escapeDiv.innerHTML = value;
+        value = escapeDiv.innerText;
+      }
       data.push({
         meta: { row, col, visualCol, visualRow, type, instance, dateFormat },
         value: toEmptyString(value),
