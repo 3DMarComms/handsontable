@@ -108,10 +108,12 @@ declare namespace _Handsontable {
     setDataAtRowProp(changes: Array<[number, string | number, Handsontable.CellValue]>, source?: string): void;
     spliceCol(col: number, index: number, amount: number, ...elements: Handsontable.CellValue[]): void;
     spliceRow(row: number, index: number, amount: number, ...elements: Handsontable.CellValue[]): void;
+    toHTML(): string;
     toPhysicalColumn(column: number): number;
     toPhysicalRow(row: number): number;
     toVisualColumn(column: number): number;
     toVisualRow(row: number): number;
+    toTableElement(): HTMLTableElement;
     unlisten(): void;
     updateSettings(settings: Handsontable.GridSettings, init?: boolean): void;
     validateCells(callback?: (valid: boolean) => void): void;
@@ -712,14 +714,14 @@ declare namespace Handsontable {
 
       constructor(hotInstance?: _Handsontable.Core);
 
-      addHook(name: string, callback: () => void): void;
+      addHook(name: string, callback: (...args: any[]) => any): void;
       callOnPluginsReady(callback: () => void): void;
       clearHooks(): void;
       destroy(): void;
       disablePlugin(): void;
       enablePlugin(): void;
       init(): void;
-      removeHook(name: string): void;
+      removeHooks(name: string): void;
     }
 
     interface AutoColumnSize extends Base {
@@ -838,6 +840,7 @@ declare namespace Handsontable {
 
       clearRange(): void;
       getComment(): string;
+      getCommentAtCell(row: number, column: number): string | undefined;
       getCommentMeta(row: number, column: number, property: string): any;
       hide(): void;
       refreshEditor(force?: boolean): void;
@@ -1365,6 +1368,8 @@ declare namespace Handsontable {
 
       moveColumn(column: number, target: number): void;
       moveColumns(columns: number[], target: number): void;
+      persistentStateLoad(): void;
+      persistentStateSave(): void;
     }
 
     interface ManualColumnResize extends Base {
@@ -1698,7 +1703,6 @@ declare namespace Handsontable {
     dataSchema?: RowObject | CellValue[] | ((row: number) => RowObject | CellValue[]);
     dateFormat?: string;
     datePickerConfig?: PikadayOptions;
-    numericFormat?: NumericFormatOptions;
     debug?: boolean;
     defaultDate?: string;
     disableVisualSelection?: boolean | 'current' | 'area' | 'header' | ('current' | 'area' | 'header')[];
@@ -1743,13 +1747,15 @@ declare namespace Handsontable {
     nestedHeaders?: (string | nestedHeaders.NestedHeader)[][];
     nestedRows?: boolean;
     noWordWrapClassName?: string;
+    numericFormat?: NumericFormatOptions;                                   
     observeChanges?: boolean;
     observeDOMVisibility?: boolean;
     outsideClickDeselects?: boolean | ((target: HTMLElement) => boolean);
     persistentState?: boolean;
     placeholder?: string;
     placeholderCellClassName?: string;
-    preventOverflow?: string | boolean;
+    preventOverflow?: boolean | 'vertical' | 'horizontal';
+    preventWheel?: boolean;
     readOnly?: boolean;
     readOnlyCellClassName?: string;
     renderAllRows?: boolean;
@@ -1762,7 +1768,7 @@ declare namespace Handsontable {
     selectOptions?: string[];
     skipColumnOnPaste?: boolean;
     sortByRelevance?: boolean;
-    source?: string[] | ((this: CellProperties, query: string, callback: (items: string[]) => void) => void);
+    source?: string[] | number[] | ((this: CellProperties, query: string, callback: (items: string[]) => void) => void);
     startCols?: number;
     startRows?: number;
     stretchH?: 'none' | 'all' | 'last';
@@ -1791,7 +1797,7 @@ declare namespace Handsontable {
       afterCellMetaReset?: () => void;
       afterChange?: (changes: CellChange[] | null, source: ChangeSource) => void;
       afterChangesObserved?: () => void;
-      afterColumnMove?: (startColumn: number, endColumn: number) => void;
+      afterColumnMove?: (columns: number[], target: number) => void;
       afterColumnResize?: (currentColumn: number, newSize: number, isDoubleClick: boolean) => void;
       afterColumnSort?: (currentSortConfig: columnSorting.Config[], destinationSortConfigs: columnSorting.Config[]) => void;
       afterContextMenuDefaultOptions?: (predefinedItems: (contextMenu.PredefinedMenuItemKey | contextMenu.MenuItemConfig)[]) => void;
@@ -1870,13 +1876,13 @@ declare namespace Handsontable {
       beforeCellAlignment?: (stateBefore: { [row: number]: string[] }, range: wot.CellRange[], type: 'horizontal' | 'vertical', alignmentClass: 'htLeft' | 'htCenter' | 'htRight' | 'htJustify' | 'htTop' | 'htMiddle' | 'htBottom') => void;
       beforeChange?: (changes: CellChange[], source: ChangeSource) => void | boolean;
       beforeChangeRender?: (changes: CellChange[], source: ChangeSource) => void;
-      beforeColumnMove?: (columns: number[], target: number) => void;
+      beforeColumnMove?: (columns: number[], target: number) => void | boolean;
       beforeColumnResize?: (currentColumn: number, newSize: number, isDoubleClick: boolean) => void | number;
       beforeColumnSort?: (currentSortConfig: columnSorting.Config[], destinationSortConfigs: columnSorting.Config[]) => void | boolean;
       beforeContextMenuSetItems?: (menuItems: contextMenu.MenuItemConfig[]) => void;
       beforeContextMenuShow?: (context: plugins.ContextMenu) => void;
       beforeCopy?: (data: CellValue[][], coords: plugins.RangeType[]) => void | boolean;
-      beforeCreateCol?: (index: number, amount: number, source?: ChangeSource) => void;
+      beforeCreateCol?: (index: number, amount: number, source?: ChangeSource) => void | boolean;
       beforeCreateRow?: (index: number, amount: number, source?: ChangeSource) => void;
       beforeCut?: (data: CellValue[][], coords: plugins.RangeType[]) => void | boolean;
       beforeDetachChild?: (parent: RowObject, element: RowObject) => void;
@@ -2172,7 +2178,9 @@ declare namespace Handsontable {
     getProperty(object: object, name: string): any | void,
     getPrototypeOf(obj: object): any | void,
     hasCaptionProblem(): boolean | void,
+    htmlToGridSettings(element: HTMLTableElement | string, rootDocument?: Document): GridSettings,
     inherit(Child: object, Parent: object): object,
+    instanceToHTML(instance: _Handsontable.Core): string,
     isChrome(): boolean,
     isClassListSupported(): boolean;
     isCtrlKey(keyCode: number): boolean,
@@ -2225,7 +2233,7 @@ declare namespace Handsontable {
   interface Dom {
     HTML_CHARACTERS: RegExp;
     addClass: (element: HTMLElement, className: string | any[]) => void;
-    addEvent: (element: HTMLElement, event: string, callback: () => void) => void;
+    addEvent: (element: HTMLElement, event: string, callback: (event: Event) => void) => void;
     clearTextSelection: (rootWindow?: Window) => void;
     closest: (element: HTMLElement, nodes: any[], until?: HTMLElement) => HTMLElement | void;
     closestDown: (element: HTMLElement, nodes: any[], until?: HTMLElement) => HTMLElement | void;
@@ -2441,7 +2449,7 @@ declare namespace Handsontable {
   namespace autoColumnSize {
     interface Settings {
       syncLimit?: string | number;
-      userHeaders?: boolean;
+      useHeaders?: boolean;
     }
   }
 

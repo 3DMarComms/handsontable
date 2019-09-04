@@ -1,7 +1,6 @@
 import {
   addClass,
   fastInnerText,
-  isVisible,
   removeClass,
 } from './../../../helpers/dom/element';
 import { objectEach } from './../../../helpers/object';
@@ -77,7 +76,7 @@ class Walkontable {
   draw(fastDraw = false) {
     this.drawInterrupted = false;
 
-    if (!fastDraw && !isVisible(this.wtTable.TABLE)) {
+    if (!fastDraw && !this.wtTable.isVisible()) {
       // draw interrupted because TABLE is not visible
       this.drawInterrupted = true;
     } else {
@@ -119,7 +118,7 @@ class Walkontable {
     } else if (coords.col < fixedColumns) {
       return this.wtOverlays.leftOverlay.clone.wtTable.getCell(coords);
 
-    } else if (coords.row < totalRows && coords.row > totalRows - fixedRowsBottom) {
+    } else if (coords.row < totalRows && coords.row >= totalRows - fixedRowsBottom) {
       if (this.wtOverlays.bottomOverlay && this.wtOverlays.bottomOverlay.clone) {
         return this.wtOverlays.bottomOverlay.clone.wtTable.getCell(coords);
       }
@@ -195,6 +194,15 @@ class Walkontable {
    */
   getOverlayName() {
     return this.cloneOverlay ? this.cloneOverlay.type : 'master';
+  }
+
+  /**
+   * Check if this instance acts as an overlay (internally called as "clone" of the master table).
+   *
+   * @returns {Boolean}
+   */
+  isClone() {
+    return !this.cloneSource;
   }
 
   /**
