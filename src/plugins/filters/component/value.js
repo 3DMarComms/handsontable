@@ -172,20 +172,22 @@ class ValueComponent extends BaseComponent {
    */
   reset() {
     const defaultBlankCellValue = this.hot.getTranslatedPhrase(C.FILTERS_VALUES_BLANK_CELLS);
-    let values = unifyColumnValues(this._getColumnVisibleValues());
-    let items = intersectValues(values, values, defaultBlankCellValue);
+    var values = unifyColumnValues(this._getColumnVisibleValues());
+    var items = intersectValues(values, values, defaultBlankCellValue);
 
     if (this.hot.getSettings().escapeFilters) {
         // Escape the values
-        let div = this.hot.rootDocument.createElement('div');
-        for (let i in items) {
-            div.innerHTML = items[i]['visualValue'];
-            items[i]['visualValue'] = div.innerText;
-            items[i]['value'] = div.innerText;  
+        var div = this.hot.rootDocument.createElement('div');
+        for (var i in items) {
+            if (!!items[i]['value']) {
+                div.innerHTML = items[i]['visualValue'];
+                items[i]['visualValue'] = div.innerText;
+                items[i]['value'] = div.innerText;
+            }
         }
         // Filter them out
-        let result = [];
-        let map = new Map();
+        var result = [];
+        var map = new Map();
         for (const item of items) {
             if(!map.has(item.value)){
                 map.set(item.value, true);    // set any value to Map

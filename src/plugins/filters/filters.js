@@ -412,7 +412,7 @@ class Filters extends BasePlugin {
 
     arrayEach(this.hot.getSourceDataAtCol(visualIndex), (value, rowIndex) => {
       let { row, col, visualCol, visualRow, type, instance, dateFormat } = this.hot.getCellMeta(rowIndex, visualIndex);
-      if (escapeDiv) {
+      if (escapeDiv && !!value) {
         escapeDiv.innerHTML = value;
         value = escapeDiv.innerText;
       }
